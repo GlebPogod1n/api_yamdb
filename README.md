@@ -37,7 +37,7 @@
 - Склонируйте репозиторий:  
 ``` git clone <название репозитория> ```    
 - Установите и активируйте виртуальное окружение:  
-``` python -m venv venv ``` или  ``` python3 -m venv venv ``` для Windows
+``` python3 -m venv venv ``` или  ``` python -m venv venv ``` для Windows
 ``` source venv/bin/activate ``` 
 - Установите зависимости из файла requirements.txt:   
 ``` pip install -r requirements.txt ```
