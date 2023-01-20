@@ -25,7 +25,7 @@ class Genre(models.Model):
 
 class Category(models.Model):
     name = models.CharField(
-        max_length=25,
+        max_length=256,
         verbose_name='Название категории'
     )
     slug = models.SlugField(
@@ -42,7 +42,7 @@ class Category(models.Model):
 
 class Title(models.Model):
     name = models.CharField(
-        db_index=True, max_length=100
+        db_index=True, max_length=256
     )
     year = models.IntegerField(
         verbose_name='Дата выпуска',
