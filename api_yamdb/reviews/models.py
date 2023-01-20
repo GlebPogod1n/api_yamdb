@@ -8,16 +8,15 @@ User = get_user_model()
 
 class Genre(models.Model):
     name = models.CharField(
-        max_length=25,
+        max_length=256,
         verbose_name='Название жанра'
     )
-    slug = models.CharField(
+    slug = models.SlugField(
         max_length=50,
         unique=True,
     )
 
     class Meta:
-        ordering = ['name']
         verbose_name = 'Жанр'
 
     def __str__(self):
@@ -29,13 +28,12 @@ class Category(models.Model):
         max_length=25,
         verbose_name='Название категории'
     )
-    slug = models.CharField(
+    slug = models.SlugField(
         max_length=50,
         unique=True,
     )
 
     class Meta:
-        ordering = ['name']
         verbose_name = 'Категория'
 
     def __str__(self):

@@ -3,7 +3,7 @@ from django.utils import timezone
 
 
 def year_validator(value):
-    if value > timezone.now().year:
+    if not (0 < value <= timezone.now().year):
         raise ValidationError(
             '%(value)s год указан не корректно',
             params={'value': value},
