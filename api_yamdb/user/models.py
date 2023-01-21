@@ -5,7 +5,6 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from .validators import year_validator
 
 from .validators import year_validator
 
