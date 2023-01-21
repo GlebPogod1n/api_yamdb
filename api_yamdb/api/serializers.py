@@ -45,7 +45,6 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    
     """Сериализатор для модели Title (для чтения)."""
 
     rating = serializers.IntegerField(read_only=True)
