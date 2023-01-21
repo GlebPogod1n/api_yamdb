@@ -61,6 +61,8 @@ class User(AbstractUser):
 
 
 class Genre(models.Model):
+    """Жанр произведения"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название жанра'
@@ -68,6 +70,7 @@ class Genre(models.Model):
     slug = models.SlugField(
         max_length=50,
         unique=True,
+        verbose_name='Идентификатор жанра',
     )
 
     class Meta:
@@ -78,6 +81,7 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
+    """Категория произведения"""
     name = models.CharField(
         max_length=256,
         verbose_name='Название категории'
@@ -85,6 +89,7 @@ class Category(models.Model):
     slug = models.SlugField(
         max_length=50,
         unique=True,
+        verbose_name='Идентификатор категории',
     )
 
     class Meta:
@@ -95,6 +100,8 @@ class Category(models.Model):
 
 
 class Title(models.Model):
+    """Произведение"""
+
     name = models.CharField(
         db_index=True, max_length=256
     )
@@ -110,6 +117,7 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
+        verbose_name='Жанр',
         related_name='titles',
         blank=True
     )

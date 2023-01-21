@@ -11,6 +11,8 @@ from user.models import Category, Genre, Title
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
+    """Вьюсет для модели Category"""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (SuperUserOrAdminOrModeratorOrAuthor,)
@@ -19,6 +21,8 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
+    """Вьюсет для модели Genre"""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (SuperUserOrAdminOrModeratorOrAuthor,)
@@ -27,6 +31,8 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для модели Title"""
+
     queryset = Title.objects.annotate(rating=Avg(
         'reviews__score')).order_by('name')
     serializer_class = TitleSerializer
