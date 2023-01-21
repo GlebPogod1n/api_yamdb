@@ -2,12 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import EmailValidator, RegexValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.contrib.auth import get_user_model
-from django.db import models
 
 from .validators import year_validator
 
-from .validators import year_validator
 
 class User(AbstractUser):
     """Класс модели пользователя"""
@@ -114,6 +111,7 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         related_name='titles',
+        verbose_name='Жанр',
         blank=True
     )
     category = models.ForeignKey(
@@ -202,6 +200,7 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:15]
+
 
 class Genre(models.Model):
     name = models.CharField(
