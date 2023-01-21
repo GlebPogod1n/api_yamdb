@@ -2,11 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import EmailValidator, RegexValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.contrib.auth import get_user_model
-from django.db import models
 
 
-from .validators import year_validator
 
 class User(AbstractUser):
     """Класс модели пользователя"""
@@ -63,6 +60,8 @@ class User(AbstractUser):
 
 
 class Genre(models.Model):
+    """Жанр произведения"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название жанра'
@@ -70,6 +69,7 @@ class Genre(models.Model):
     slug = models.SlugField(
         max_length=50,
         unique=True,
+        verbose_name='Идентификатор жанра',
     )
 
     class Meta:
@@ -80,6 +80,7 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
+    """Категория произведения"""
     name = models.CharField(
         max_length=256,
         verbose_name='Название категории'
@@ -87,6 +88,7 @@ class Category(models.Model):
     slug = models.SlugField(
         max_length=50,
         unique=True,
+        verbose_name='Идентификатор категории',
     )
 
     class Meta:
@@ -97,6 +99,8 @@ class Category(models.Model):
 
 
 class Title(models.Model):
+    """Произведение"""
+
     name = models.CharField(
         db_index=True, max_length=256
     )
@@ -112,6 +116,7 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
+        verbose_name='Жанр',
         related_name='titles',
         blank=True
     )
@@ -201,72 +206,3 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:15]
-
-class Genre(models.Model):
-    name = models.CharField(
-        max_length=256,
-        verbose_name='Название жанра'
-    )
-    slug = models.SlugField(
-        max_length=50,
-        unique=True,
-    )
-
-    class Meta:
-        verbose_name = 'Жанр'
-
-    def __str__(self):
-        return self.name
-
-
-class Category(models.Model):
-    name = models.CharField(
-        max_length=256,
-        verbose_name='Название категории'
-    )
-    slug = models.SlugField(
-        max_length=50,
-        unique=True,
-    )
-
-    class Meta:
-        verbose_name = 'Категория'
-
-    def __str__(self):
-        return self.name
-
-
-class Title(models.Model):
-    name = models.CharField(
-        db_index=True, max_length=256
-    )
-    year = models.IntegerField(
-        verbose_name='Дата выпуска',
-        validators=(year_validator,)
-    )
-    description = models.TextField(
-        verbose_name='Описание',
-        max_length=200,
-        null=True,
-        blank=True
-    )
-    genre = models.ManyToManyField(
-        Genre,
-        related_name='titles',
-        blank=True
-    )
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
-        verbose_name='Категория',
-        related_name='titles',
-        blank=True,
-        null=True
-    )
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = 'Произведение'
-
-    def __str__(self):
-        return self.na
