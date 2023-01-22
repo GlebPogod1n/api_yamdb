@@ -1,27 +1,27 @@
+from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework import mixins, viewsets, status
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from reviews.models import Review
-from django.shortcuts import get_object_or_404
-from django.contrib.auth.tokens import default_token_generator
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
+from api.permissions import AuthorAdminModeratorOrReadOnly, IsSuperUserOrIsAdminOnly
 from api.permissions import IsAdminOrReadOnly
-from api.serializers import CategorySerializer, GenreSerializer,\
+from api.serializers import CategorySerializer, GenreSerializer, \
     TitleSerializer, TitleReadSerializer
 from reviews.models import Category, Genre, Title
+from reviews.models import Review
 from users.models import User
 from .serializers import (CommentSerializer, ReviewSerializer,
                           UserGetTokenSerializers, UserCreateSerializers, UserSerializer)
 from .token import send_code
-from api.permissions import AuthorAdminModeratorOrReadOnly, IsSuperUserOrIsAdminOnly
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
@@ -56,7 +56,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH']:
+        if self.action in ('retrieve', 'list'):
             return TitleReadSerializer
         return TitleSerializer
 
@@ -69,7 +69,6 @@ class CreateUserViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.AllowAny,)
 
     def create_user(self, request):
-
         serializer = UserCreateSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = User.objects.get_or_create(serializer.validated_data)
@@ -90,7 +89,6 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.AllowAny,)
 
     def create_jwt(self, request):
-
         serializer = UserGetTokenSerializers(data=request.data)
         serializer.is_valid(raise_exeption=True)
         username = serializer.validated_data.get('username')
