@@ -1,11 +1,10 @@
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
-from rest_framework import viewsets
+from rest_framework import filters
 from rest_framework import mixins, viewsets, status
+from rest_framework import permissions
 from rest_framework.pagination import PageNumberPagination
-from api_yamdb.reviews.models import Review
-import permissions
+from reviews.models import Review
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.response import Response
@@ -14,16 +13,13 @@ from rest_framework_simplejwt.tokens import AccessToken
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
 from api.permissions import IsAdminOrReadOnly
-from api.serializers import CategorySerializer, GenreSerializer, \
-from .permissions import SuperUserOrAdminOrModeratorOrAuthor
 from api.serializers import CategorySerializer, GenreSerializer,\
     TitleSerializer, TitleReadSerializer
-from reviews.models import Category, Genre, Title
-from reviews.models import User, Title
+from reviews.models import Category, Genre, Title, User
 from .serializers import (CommentSerializer, ReviewSerializer,
                           UserGetTokenSerializers, UserCreateSerializers)
 from .token import send_code
-from api_yamdb.api.permissions import AuthorAdminModeratorOrReadOnly
+from api.permissions import AuthorAdminModeratorOrReadOnly
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):

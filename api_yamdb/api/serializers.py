@@ -97,7 +97,6 @@ class UserGetTokenSerializers(serializers.Serializer):
     """Серилизатор при получении токена JWT"""
 
     username = serializers.CharField(
-        max_lenght=100,
         required=True
     )
 
