@@ -4,8 +4,8 @@ from rest_framework import filters, viewsets
 
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
-from v1.permissions import SuperUserOrAdminOrModeratorOrAuthor
-from api.serializers import CategorySerializer, GenreSerializer,\
+from api.permissions import IsAdminOrReadOnly
+from api.serializers import CategorySerializer, GenreSerializer, \
     TitleSerializer, TitleReadSerializer
 from user.models import Category, Genre, Title
 
@@ -15,7 +15,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (SuperUserOrAdminOrModeratorOrAuthor,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -25,7 +25,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (SuperUserOrAdminOrModeratorOrAuthor,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -36,7 +36,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg(
         'reviews__score')).order_by('name')
     serializer_class = TitleSerializer
-    permission_classes = (SuperUserOrAdminOrModeratorOrAuthor,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
