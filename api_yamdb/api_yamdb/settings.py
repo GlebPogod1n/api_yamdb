@@ -124,3 +124,5 @@ SIMPLE_JWT = {
 }
 
 EMAIL = 'registration@yandex.ru'
+
+LIST_PER_PAGE = 10

@@ -2,6 +2,15 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import EmailValidator, RegexValidator
 from django.db import models
 
+USER_ROLE_USER = 'user'
+USER_ROLE_MODERATOR = 'moderator'
+USER_ROLE_ADMIN = 'admin'
+
+USER_ROLE_CHOICES = (
+    (USER_ROLE_USER, 'Пользователь'),
+    (USER_ROLE_MODERATOR, 'Модератор'),
+    (USER_ROLE_ADMIN, 'Админ'),
+)
 
 class User(AbstractUser):
     """Класс модели пользователя"""
@@ -37,10 +46,8 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=30,
         verbose_name='Роль',
-        validators=[RegexValidator(
-            regex=r'^[\w.@+-]+$',
-            message='Поле роли содержит недопустимый символ'
-        )]
+        choices=USER_ROLE_CHOICES,
+        default=USER_ROLE_USER,
     )
 
     bio = models.TextField(
