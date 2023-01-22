@@ -12,6 +12,7 @@ USER_ROLE_CHOICES = (
     (USER_ROLE_ADMIN, 'Админ'),
 )
 
+
 class User(AbstractUser):
     """Класс модели пользователя"""
 
