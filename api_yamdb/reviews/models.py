@@ -27,6 +27,7 @@ class Genre(models.Model):
 
 class Category(models.Model):
     """Категория произведения"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название категории'
