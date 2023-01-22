@@ -4,11 +4,12 @@ from rest_framework import routers
 from api.views import (CategoryViewSet, CreateUserViewSet,
                        GenreViewSet, UserGetTokenViewSet,
                        TitleViewSet, ReviewViewSet,
-                       CommentViewSet)
+                       CommentViewSet, UserViewSet)
 
 app_name = 'api'
 
 router = routers.DefaultRouter()
+router.register('users', UserViewSet, basename='users')
 router.register(r'categories', CategoryViewSet, basename='categories')
 router.register(r'genres', GenreViewSet, basename='genres')
 router.register(r'titles', TitleViewSet, basename='titles')
