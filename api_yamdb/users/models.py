@@ -20,6 +20,10 @@ class User(AbstractUser):
         verbose_name='Псевдоним',
         db_index=True,
         unique=True,
+        validators=[RegexValidator(
+            regex=r'^[\w.@+-]+$',
+            message='Имя пользователя содержит недопустимый символ'
+        )]
     )
 
     first_name = models.CharField(
@@ -35,7 +39,7 @@ class User(AbstractUser):
     )
 
     email = models.EmailField(
-        max_length=200,
+        max_length=254,
         verbose_name='email',
         unique=True,
         validators=[EmailValidator(
@@ -62,3 +66,24 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    @property
+    def is_user(self):
+        if self.role == USER_ROLE_USER:
+            return True
+        else:
+            return False
+
+    @property
+    def is_moderator(self):
+        if self.role == USER_ROLE_MODERATOR:
+            return True
+        else:
+            return False
+
+    @property
+    def is_admin(self):
+        if self.role == USER_ROLE_ADMIN:
+            return True
+        else:
+            return False
