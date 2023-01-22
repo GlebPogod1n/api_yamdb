@@ -88,7 +88,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = UserGetTokenSerializers
     permission_classes = (permissions.AllowAny,)
 
-    def create_jwt(self, request, *args, **kwargs):
+    def create_jwt(self, request):
 
         serializer = UserGetTokenSerializers(data=request.data)
         serializer.is_valid(raise_exeption=True)
@@ -130,3 +130,5 @@ class CommentViewSet(viewsets.ModelViewSet):
         review_id = self.kwargs.get("review_id")
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
+
+
