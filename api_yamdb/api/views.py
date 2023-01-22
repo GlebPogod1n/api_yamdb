@@ -15,7 +15,8 @@ from api.mixins import ListCreateDestroyViewSet
 from api.permissions import IsAdminOrReadOnly
 from api.serializers import CategorySerializer, GenreSerializer,\
     TitleSerializer, TitleReadSerializer
-from reviews.models import Category, Genre, Title, User
+from reviews.models import Category, Genre, Title
+from users.models import User
 from .serializers import (CommentSerializer, ReviewSerializer,
                           UserGetTokenSerializers, UserCreateSerializers)
 from .token import send_code
@@ -26,6 +27,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     """Вьюсет для модели Category"""
 
     queryset = Category.objects.all()
+    pagination_class = PageNumberPagination
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
