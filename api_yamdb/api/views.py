@@ -86,7 +86,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = UserGetTokenSerializers
     permission_classes = (permissions.AllowAny,)
 
-    def create_JWT(self, request, *args, **kwargs):
+    def create_jwt(self, request, *args, **kwargs):
 
         serializer = UserGetTokenSerializers(data=request.data)
         serializer.is_valid(raise_exeption=True)
