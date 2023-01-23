@@ -109,7 +109,9 @@ class UserGetTokenSerializers(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Серилизатор для объектов модели user"""
-    email = serializers.EmailField()
+    email = serializers.EmailField(
+        max_length=254,
+    )
 
     class Meta:
         model = User

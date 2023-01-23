@@ -21,7 +21,6 @@ from reviews.models import Review
 from users.models import User
 from .serializers import (CommentSerializer, ReviewSerializer,
                           UserGetTokenSerializers, UserCreateSerializers, UserSerializer)
-from .token import send_code
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
@@ -33,6 +32,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class GenreViewSet(ListCreateDestroyViewSet):
@@ -43,6 +43,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -59,47 +60,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ('retrieve', 'list'):
             return TitleReadSerializer
         return TitleSerializer
-
-
-class CreateUserViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Всьюсет для создания обьектов модели User"""
-
-    queryset = User.objects.all()
-    serializer_class = UserCreateSerializers
-    permission_classes = (permissions.AllowAny,)
-
-    def create_user(self, request):
-        serializer = UserCreateSerializers(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = User.objects.get_or_create(serializer.validated_data)
-        confirmation_code = default_token_generator.make_token(user)
-        send_code(
-            email=user.email,
-            confirmation_code=confirmation_code
-        )
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Вьюсет для генерации и получения пользователем JWT токена"""
-
-    queryset = User.objects.all()
-    serializer_class = UserGetTokenSerializers
-    permission_classes = (permissions.AllowAny,)
-
-    def create_jwt(self, request):
-        serializer = UserGetTokenSerializers(data=request.data)
-        serializer.is_valid(raise_exeption=True)
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
-
-        if not default_token_generator.check_token(user, confirmation_code):
-            message = {'confirmation_code': 'Неверный код подтверждения'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': str(AccessToken.for_user(user))}
-        return Response(message, status=status.HTTP_200_OK)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -129,29 +89,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         review_id = self.kwargs.get("review_id")
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
-
-
-class UserReceiveTokenViewSet(mixins.CreateModelMixin,
-                              viewsets.GenericViewSet):
-    """Вьюсет для получения пользователем JWT токена."""
-
-    queryset = User.objects.all()
-    serializer_class = IsSuperUserOrIsAdminOnly
-    permission_classes = (permissions.AllowAny,)
-
-    def create(self, request, *args, **kwargs):
-        """Предоставляет пользователю JWT токен по коду подтверждения."""
-        serializer = UserGetTokenSerializers(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
-
-        if not default_token_generator.check_token(user, confirmation_code):
-            message = {'confirmation_code': 'Код подтверждения невалиден'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': str(AccessToken.for_user(user))}
-        return Response(message, status=status.HTTP_200_OK)
 
 
 class UserViewSet(mixins.ListModelMixin,
@@ -204,3 +141,66 @@ class UserViewSet(mixins.ListModelMixin,
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CreateUserViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """Всьюсет для создания обьектов модели User"""
+
+    queryset = User.objects.all()
+    serializer_class = UserCreateSerializers
+    permission_classes = (permissions.AllowAny,)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+            headers=headers
+        )
+
+
+class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """Вьюсет для генерации и получения пользователем JWT токена"""
+
+    queryset = User.objects.all()
+    serializer_class = UserGetTokenSerializers
+    permission_classes = (permissions.AllowAny,)
+
+    def create_jwt(self, request):
+        serializer = UserGetTokenSerializers(data=request.data)
+        serializer.is_valid(raise_exeption=True)
+        username = serializer.validated_data.get('username')
+        confirmation_code = serializer.validated_data.get('confirmation_code')
+        user = get_object_or_404(User, username=username)
+
+        if not default_token_generator.check_token(user, confirmation_code):
+            message = {'confirmation_code': 'Неверный код подтверждения'}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        message = {'token': str(AccessToken.for_user(user))}
+        return Response(message, status=status.HTTP_200_OK)
+
+
+class UserReceiveTokenViewSet(mixins.CreateModelMixin,
+                              viewsets.GenericViewSet):
+    """Вьюсет для получения пользователем JWT токена."""
+
+    queryset = User.objects.all()
+    serializer_class = IsSuperUserOrIsAdminOnly
+    permission_classes = (permissions.AllowAny,)
+
+    def create(self, request, *args, **kwargs):
+        """Предоставляет пользователю JWT токен по коду подтверждения."""
+        serializer = UserGetTokenSerializers(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data.get('username')
+        confirmation_code = serializer.validated_data.get('confirmation_code')
+        user = get_object_or_404(User, username=username)
+
+        if not default_token_generator.check_token(user, confirmation_code):
+            message = {'confirmation_code': 'Код подтверждения невалиден'}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        message = {'token': str(AccessToken.for_user(user))}
+        return Response(message, status=status.HTTP_200_OK)
