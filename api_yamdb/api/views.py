@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.decorators import api_view
 
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
@@ -21,7 +22,7 @@ from reviews.models import Review
 from users.models import User
 from .serializers import (CommentSerializer, ReviewSerializer,
                           UserGetTokenSerializers, UserCreateSerializers, UserSerializer)
-
+from .token import send_code
 
 class CategoryViewSet(ListCreateDestroyViewSet):
     """Вьюсет для модели Category"""
@@ -91,6 +92,27 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
+class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """Вьюсет для генерации и получения пользователем JWT токена"""
+
+    queryset = User.objects.all()
+    serializer_class = UserGetTokenSerializers
+    permission_classes = (permissions.AllowAny,)
+
+    def create(self, request, *args, **kwargs):
+        """Предоставляет пользователю JWT токен по коду подтверждения."""
+        serializer = UserGetTokenSerializers(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data.get('username')
+        confirmation_code = serializer.validated_data.get('confirmation_code')
+        user = get_object_or_404(User, username=username)
+
+        if not default_token_generator.check_token(user, confirmation_code):
+            message = {'confirmation_code': 'Код подтверждения невалиден'}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        message = {'token': str(AccessToken.for_user(user))}
+        return Response(message, status=status.HTTP_200_OK)
+
 class UserViewSet(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
                   viewsets.GenericViewSet):
@@ -108,6 +130,7 @@ class UserViewSet(mixins.ListModelMixin,
         url_path=r'(?P<username>[\w.@+-]+)',
         url_name='get_user'
     )
+
     def get_user_by_username(self, request, username):
         """Обеспечивает получание данных пользователя по его username"""
         user = get_object_or_404(User, username=username)
@@ -121,6 +144,7 @@ class UserViewSet(mixins.ListModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     @action(
         detail=False,
@@ -142,65 +166,21 @@ class UserViewSet(mixins.ListModelMixin,
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-class CreateUserViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Всьюсет для создания обьектов модели User"""
+class CreateUserViewSet(mixins.CreateModelMixin,
+                        viewsets.GenericViewSet):
+    """Вьюсет для создания обьектов класса User."""
 
     queryset = User.objects.all()
     serializer_class = UserCreateSerializers
     permission_classes = (permissions.AllowAny,)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    def create(self, request):
+        serializer = UserCreateSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-            headers=headers
+        user, _ = User.objects.get_or_create(**serializer.validated_data)
+        confirmation_code = default_token_generator.make_token(user)
+        send_code(
+            email=user.email,
+            confirmation_code=confirmation_code
         )
-
-
-class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Вьюсет для генерации и получения пользователем JWT токена"""
-
-    queryset = User.objects.all()
-    serializer_class = UserGetTokenSerializers
-    permission_classes = (permissions.AllowAny,)
-
-    def create_jwt(self, request):
-        serializer = UserGetTokenSerializers(data=request.data)
-        serializer.is_valid(raise_exeption=True)
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
-
-        if not default_token_generator.check_token(user, confirmation_code):
-            message = {'confirmation_code': 'Неверный код подтверждения'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': str(AccessToken.for_user(user))}
-        return Response(message, status=status.HTTP_200_OK)
-
-
-class UserReceiveTokenViewSet(mixins.CreateModelMixin,
-                              viewsets.GenericViewSet):
-    """Вьюсет для получения пользователем JWT токена."""
-
-    queryset = User.objects.all()
-    serializer_class = IsSuperUserOrIsAdminOnly
-    permission_classes = (permissions.AllowAny,)
-
-    def create(self, request, *args, **kwargs):
-        """Предоставляет пользователю JWT токен по коду подтверждения."""
-        serializer = UserGetTokenSerializers(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
-
-        if not default_token_generator.check_token(user, confirmation_code):
-            message = {'confirmation_code': 'Код подтверждения невалиден'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': str(AccessToken.for_user(user))}
-        return Response(message, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
+from rest_framework.validators import UniqueValidator
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -97,20 +98,15 @@ class UserCreateSerializers(serializers.ModelSerializer):
 class UserGetTokenSerializers(serializers.Serializer):
     """Серилизатор при получении токена JWT"""
 
-    username = serializers.CharField(
-        required=True
-    )
-
-    confirmation_code = serializers.CharField(
-        max_length=150,
-        required=True
-    )
+    username = serializers.CharField(max_length=150)
+    confirmation_code = serializers.CharField(max_length=50)
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Серилизатор для объектов модели user"""
     email = serializers.EmailField(
         max_length=254,
+        validators =[UniqueValidator(queryset=User.objects.all())]
     )
 
     class Meta:
