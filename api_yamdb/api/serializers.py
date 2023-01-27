@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-from rest_framework.validators import UniqueValidator
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -67,46 +68,42 @@ class TitleReadSerializer(serializers.ModelSerializer):
         )
 
 
-class UserCreateSerializers(serializers.ModelSerializer):
-    """Серилизатор для создания Usera"""
+class UserCreateSerializers(serializers.Serializer):
+    """Сериализатор для создания Usera"""
 
-    class Meta:
-        model = User
-        fields = (
-            'username', 'email'
-        )
+    username = serializers.CharField(
+        required=True,
+        max_length=150,
+        validators=[UnicodeUsernameValidator()])
+    email = serializers.EmailField(
+        required=True,
+        max_length=254
+    )
 
     def validate(self, data):
-        """Проверяем, чтобы пользователь не использовал
-        повторные username и email и не присваивал себе имя me"""
-
-        if User.objects.filter(username=data.get('username')):
-            raise serializers.ValidationError(
-                'Пользователь с таким username уже существует'
-            )
-        if User.objects.filter(email=data.get('email')):
-            raise serializers.ValidationError(
-                'Пользователь с таким email уже существует'
-            )
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
             )
         return data
 
+    def clean(self):
+        cleaned_data = super().clean(self)
+        if User.objects.filter(email=cleaned_data.get('email')).exists():
+            self.fields.add_error('email', "Эта почта уже зарегестрированна")
+        return cleaned_data
+
 
 class UserGetTokenSerializers(serializers.Serializer):
-    """Серилизатор при получении токена JWT"""
-
-    username = serializers.CharField(max_length=150)
-    confirmation_code = serializers.CharField(max_length=50)
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Серилизатор для объектов модели user"""
     email = serializers.EmailField(
         max_length=254,
-        validators =[UniqueValidator(queryset=User.objects.all())]
+        validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
     class Meta:
@@ -114,13 +111,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'first_name', 'last_name', 'email', 'role', 'bio'
         )
-
-    def valid_username(self, username):
-        if username == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя me запрещено'
-            )
-        return username
 
 
 class ReviewSerializer(serializers.ModelSerializer):

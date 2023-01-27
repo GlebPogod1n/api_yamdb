@@ -1,30 +1,16 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import EmailValidator, RegexValidator
 from django.db import models
-
-USER_ROLE_USER = 'user'
-USER_ROLE_MODERATOR = 'moderator'
-USER_ROLE_ADMIN = 'admin'
-
-USER_ROLE_CHOICES = (
-    (USER_ROLE_USER, 'Пользователь'),
-    (USER_ROLE_MODERATOR, 'Модератор'),
-    (USER_ROLE_ADMIN, 'Админ'),
-)
 
 
 class User(AbstractUser):
     """Класс модели пользователя"""
-
-    username = models.CharField(
-        max_length=100,
-        verbose_name='Псевдоним',
-        db_index=True,
-        unique=True,
-        validators=[RegexValidator(
-            regex=r'^[\w.@+-]+$',
-            message='Имя пользователя содержит недопустимый символ'
-        )]
+    USER_ROLE_USER = 'user'
+    USER_ROLE_MODERATOR = 'moderator'
+    USER_ROLE_ADMIN = 'admin'
+    USER_ROLE_CHOICES = (
+        (USER_ROLE_USER, 'Пользователь'),
+        (USER_ROLE_MODERATOR, 'Модератор'),
+        (USER_ROLE_ADMIN, 'Админ'),
     )
 
     first_name = models.CharField(
@@ -42,9 +28,6 @@ class User(AbstractUser):
     email = models.EmailField(
         verbose_name='email',
         unique=True,
-        validators=[EmailValidator(
-            message='Введите корректный email'
-        )]
     )
 
     role = models.CharField(
@@ -63,27 +46,21 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('id',)
-
-    def __str__(self):
-        return self.username
+        constraints = [
+            models.UniqueConstraint(
+                fields=('username', 'email'),
+                name='unique_user'
+            )
+        ]
 
     @property
     def is_user(self):
-        if self.role == USER_ROLE_USER:
-            return True
-        else:
-            return False
+        return self.role == self.USER_ROLE_USER
 
     @property
     def is_moderator(self):
-        if self.role == USER_ROLE_MODERATOR:
-            return True
-        else:
-            return False
+        return self.role == self.USER_ROLE_MODERATOR
 
     @property
     def is_admin(self):
-        if self.role == USER_ROLE_ADMIN:
-            return True
-        else:
-            return False
+        return self.role == self.USER_ROLE_ADMIN or self.is_superuser

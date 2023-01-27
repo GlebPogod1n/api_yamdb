@@ -1,4 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,25 +10,25 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.decorators import api_view
 
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
-from api.permissions import AuthorAdminModeratorOrReadOnly, IsSuperUserOrIsAdminOnly
-from api.permissions import IsAdminOrReadOnly
-from api.serializers import CategorySerializer, GenreSerializer, \
-    TitleSerializer, TitleReadSerializer
-from reviews.models import Category, Genre, Title
-from reviews.models import Review
+from api.permissions import AuthorAdminModeratorOrReadOnly,\
+    IsSuperUserOrIsAdminOnly, IsAdminOrReadOnly
+from reviews.models import Category, Genre, Title, Review
 from users.models import User
 from .serializers import (CommentSerializer, ReviewSerializer,
-                          UserGetTokenSerializers, UserCreateSerializers, UserSerializer)
+                          UserGetTokenSerializers, UserCreateSerializers,
+                          UserSerializer, CategorySerializer,
+                          TitleSerializer, TitleReadSerializer,
+                          GenreSerializer)
 from .token import send_code
+
 
 class CategoryViewSet(ListCreateDestroyViewSet):
     """Вьюсет для модели Category"""
 
-    queryset = Category.objects.all()
+    queryset = Category.objects.get_queryset().order_by('id')
     pagination_class = PageNumberPagination
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -39,7 +40,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 class GenreViewSet(ListCreateDestroyViewSet):
     """Вьюсет для модели Genre"""
 
-    queryset = Genre.objects.all()
+    queryset = Genre.objects.get_queryset().order_by('id')
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
@@ -113,11 +114,9 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         message = {'token': str(AccessToken.for_user(user))}
         return Response(message, status=status.HTTP_200_OK)
 
-class UserViewSet(mixins.ListModelMixin,
-                  mixins.CreateModelMixin,
-                  viewsets.GenericViewSet):
-    """Вьюсет для обьектов модели User."""
 
+class UserViewSet(viewsets.ModelViewSet):
+    lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsSuperUserOrIsAdminOnly,)
@@ -130,21 +129,19 @@ class UserViewSet(mixins.ListModelMixin,
         url_path=r'(?P<username>[\w.@+-]+)',
         url_name='get_user'
     )
-
     def get_user_by_username(self, request, username):
         """Обеспечивает получание данных пользователя по его username"""
         user = get_object_or_404(User, username=username)
         if request.method == 'PATCH':
             serializer = UserSerializer(user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=request.user.role)
             return Response(serializer.data, status=status.HTTP_200_OK)
         elif request.method == 'DELETE':
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
     @action(
         detail=False,
@@ -166,21 +163,31 @@ class UserViewSet(mixins.ListModelMixin,
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class CreateUserViewSet(mixins.CreateModelMixin,
                         viewsets.GenericViewSet):
-    """Вьюсет для создания обьектов класса User."""
-
     queryset = User.objects.all()
     serializer_class = UserCreateSerializers
     permission_classes = (permissions.AllowAny,)
 
-    def create(self, request):
-        serializer = UserCreateSerializers(data=request.data)
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user, _ = User.objects.get_or_create(**serializer.validated_data)
-        confirmation_code = default_token_generator.make_token(user)
-        send_code(
-            email=user.email,
-            confirmation_code=confirmation_code
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            user = User.objects.filter(**serializer.validated_data)
+        except IntegrityError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user, _ = User.objects.get_or_create(**serializer.validated_data)
+            confirmation_code = default_token_generator.make_token(user)
+            send_code(
+                email=user.email,
+                confirmation_code=confirmation_code
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def clean(self):
+        cleaned_data = super().clean(self)
+        if User.objects.filter(email=cleaned_data.get('email')).exists():
+            self.fields.add_error('email', "Эта почта уже зарегестрированна")
+        return cleaned_data
