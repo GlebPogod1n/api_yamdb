@@ -1,5 +1,4 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -173,21 +172,10 @@ class CreateUserViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            user = User.objects.filter(**serializer.validated_data)
-        except IntegrityError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        else:
-            user, _ = User.objects.get_or_create(**serializer.validated_data)
-            confirmation_code = default_token_generator.make_token(user)
-            send_code(
-                email=user.email,
-                confirmation_code=confirmation_code
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def clean(self):
-        cleaned_data = super().clean(self)
-        if User.objects.filter(email=cleaned_data.get('email')).exists():
-            self.fields.add_error('email', "Эта почта уже зарегестрированна")
-        return cleaned_data
+        user, _ = User.objects.get_or_create(**serializer.validated_data)
+        confirmation_code = default_token_generator.make_token(user)
+        send_code(
+            email=user.email,
+            confirmation_code=confirmation_code
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)

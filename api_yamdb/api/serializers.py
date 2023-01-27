@@ -87,12 +87,6 @@ class UserCreateSerializers(serializers.Serializer):
             )
         return data
 
-    def clean(self):
-        cleaned_data = super().clean(self)
-        if User.objects.filter(email=cleaned_data.get('email')).exists():
-            self.fields.add_error('email', "Эта почта уже зарегестрированна")
-        return cleaned_data
-
 
 class UserGetTokenSerializers(serializers.Serializer):
     username = serializers.CharField()
