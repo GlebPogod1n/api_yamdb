@@ -32,23 +32,6 @@ class IsSuperUserOrIsAdminOnly(permissions.BasePermission):
         )
 
 
-class SuperUserOrAdminOrModeratorOrAuthor(permissions.BasePermission):
-    """
-    Предоставляется доступ к PATCH и DELETE только
-    суперпользователю, админу, аутентифицированному
-    пользователю с ролью admin или moderator, а также
-    автору объекта.
-    """
-    def has_permission(self, request):
-        return request.user.is_authenticated
-
-    def has_object_permission(self, request, obj):
-        return (request.user.is_superuser
-                or request.user.is_staff
-                or request.user.is_moderator
-                or request.user == obj.author)
-
-
 class AuthorAdminModeratorOrReadOnly(permissions.BasePermission):
 
     def has_permission(self, request, view):

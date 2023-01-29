@@ -3,9 +3,7 @@ from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework import mixins, viewsets, status
-from rest_framework import permissions
+from rest_framework import filters, viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -93,7 +91,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+class UserGetTokenViewSet(ListCreateDestroyViewSet):
     """Вьюсет для генерации и получения пользователем JWT токена"""
 
     queryset = User.objects.all()
@@ -164,8 +162,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CreateUserViewSet(mixins.CreateModelMixin,
-                        viewsets.GenericViewSet):
+class CreateUserViewSet(ListCreateDestroyViewSet):
     queryset = User.objects.all()
     serializer_class = UserCreateSerializers
     permission_classes = (permissions.AllowAny,)

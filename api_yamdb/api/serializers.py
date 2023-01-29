@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -85,13 +84,6 @@ class UserCreateSerializers(serializers.Serializer):
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
             )
-        if User.objects.filter(username=data).exists():
-            raise serializers.ValidationError(
-                {
-                    'username':
-                    'Пользователь с данным username уже зарегистрирован.'
-                },
-            )
         return data
 
 
@@ -101,11 +93,6 @@ class UserGetTokenSerializers(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Серилизатор для объектов модели user"""
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
 
     class Meta:
         model = User
