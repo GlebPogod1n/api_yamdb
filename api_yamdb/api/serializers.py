@@ -85,6 +85,13 @@ class UserCreateSerializers(serializers.Serializer):
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
             )
+        if User.objects.filter(username=data).exists():
+            raise serializers.ValidationError(
+                {
+                    'username':
+                    'Пользователь с данным username уже зарегистрирован.'
+                },
+            )
         return data
 
 
