@@ -80,7 +80,8 @@ class UserCreateSerializers(serializers.Serializer):
     )
 
     def validate(self, data):
-        if data.get('username') == 'me':
+        data.lower = 'me'
+        if data.get('username') == data.lower:
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
             )

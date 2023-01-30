@@ -162,7 +162,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CreateUserViewSet(ListCreateDestroyViewSet):
+class CreateUserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserCreateSerializers
     permission_classes = (permissions.AllowAny,)
