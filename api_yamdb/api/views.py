@@ -4,14 +4,15 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets, status, permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api.filters import TitleFilter
 from api.mixins import ListCreateDestroyViewSet
-from api.permissions import AuthorAdminModeratorOrReadOnly,\
+from api.permissions import AuthorAdminModeratorOrReadOnly, \
     IsSuperUserOrIsAdminOnly, IsAdminOrReadOnly
 from reviews.models import Category, Genre, Title, Review
 from users.models import User
@@ -162,21 +163,18 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CreateUserViewSet(ListCreateDestroyViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserCreateSerializers
-    permission_classes = (permissions.AllowAny,)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            user, _ = User.objects.get_or_create(**serializer.validated_data)
-        except IntegrityError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        confirmation_code = default_token_generator.make_token(user)
-        send_code(
-            email=user.email,
-            confirmation_code=confirmation_code
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create(request):
+    serializer = UserCreateSerializers(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    try:
+        user, _ = User.objects.get_or_create(**serializer.validated_data)
+    except IntegrityError:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    confirmation_code = default_token_generator.make_token(user)
+    send_code(
+        email=user.email,
+        confirmation_code=confirmation_code
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
