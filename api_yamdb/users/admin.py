@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from api_yamdb.settings import LIST_PER_PAGE
-
 from .models import User
 
 
@@ -17,7 +16,6 @@ class UserAdmin(admin.ModelAdmin):
         'last_name',
         'bio',
         'role'
-        # 'confirmation_code'
     )
     empty_value_display = 'значение отсутствует'
     list_editable = ('role',)
