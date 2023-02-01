@@ -79,9 +79,8 @@ class UserCreateSerializers(serializers.Serializer):
         max_length=254
     )
 
-    def validate(self, data):
-        data.lower = 'me'
-        if data.get('username') == data.lower:
+    def validate_username(self, data):
+        if data.lower() == 'me':
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
             )
