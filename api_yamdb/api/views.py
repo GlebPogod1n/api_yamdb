@@ -178,4 +178,3 @@ def create(request):
         confirmation_code=confirmation_code
     )
     return Response(serializer.data, status=status.HTTP_200_OK)
-    
